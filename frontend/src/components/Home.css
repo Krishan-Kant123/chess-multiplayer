@@ -1,0 +1,243 @@
+
+
+:root {
+    --color-bg-start: #1a1a2e;
+    --color-bg-middle: #16213e;
+    --color-bg-end: #0f3460;
+  
+    --color-primary-start: #7f00ff;
+    --color-primary-middle: #e100ff;
+    --color-primary-end: #ff0080;
+  
+    --color-button-start: #ff416c;
+    --color-button-end: #ff4b2b;
+  
+    --color-text-light: #eee;
+    --color-text-muted: #bbb;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body, html, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--color-bg-start), var(--color-bg-middle), var(--color-bg-end));
+    color: var(--color-text-light);
+  }
+  .home-container {
+    min-height: 100vh;
+    background-color: #121417;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-sizing: border-box;
+  }
+  
+  .home-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: #1a1e25;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+    text-align: center;
+    box-sizing: border-box;
+  }
+  
+  .home-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: #4a90e2;
+    text-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+  }
+  
+  .home-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .home-input {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px solid #333;
+    font-size: 16px;
+    background-color: #22272e;
+    color: #eee;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .home-input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  }
+  
+  .room-id-input {
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  .generated-room-section {
+    margin: 8px 0;
+  }
+  
+  .generated-room-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .generated-room-id {
+    color: #ddd;
+    background-color: #22272e;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 16px;
+    text-align: center;
+    min-width: 120px;
+    user-select: all;
+    border: 2px solid #333;
+  }
+  
+  .copy-button {
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background-color: #4a90e2;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .copy-button:hover:not(.disabled) {
+    background-color: #357abd;
+    transform: translateY(-1px);
+  }
+  
+  .copy-button.disabled {
+    background-color: #666;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  
+  .button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  
+  .home-button {
+    flex: 1;
+    padding: 16px 0;
+    border-radius: 12px;
+    border: none;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .join-button {
+    background: linear-gradient(135deg, #e52d27 0%, #b31217 100%);
+    background-size: 200% auto;
+  }
+  
+  .join-button:hover {
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(229, 45, 39, 0.3);
+  }
+  
+  .create-button {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  }
+  
+  .create-button:hover {
+    background: linear-gradient(135deg, #357abd 0%, #2868a3 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(74, 144, 226, 0.3);
+  }
+  
+  .home-info {
+    margin-top: 24px;
+    font-size: 14px;
+    color: #aaa;
+    line-height: 1.5;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 480px) {
+    .home-container {
+      padding: 16px;
+    }
+    
+    .home-card {
+      padding: 24px;
+      max-width: 100%;
+    }
+    
+    .home-title {
+      font-size: 1.75rem;
+    }
+    
+    .home-input {
+      padding: 14px;
+      font-size: 15px;
+    }
+    
+    .button-group {
+      flex-direction: column;
+    }
+    
+    .home-button {
+      padding: 14px 0;
+      font-size: 15px;
+    }
+    
+    .generated-room-display {
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .generated-room-id {
+      width: 100%;
+      padding: 10px 12px;
+    }
+    
+    .copy-button {
+      width: 100%;
+    }
+  }
+  
+  @media (max-width: 320px) {
+    .home-card {
+      padding: 20px;
+    }
+    
+    .home-title {
+      font-size: 1.5rem;
+    }
+  }
