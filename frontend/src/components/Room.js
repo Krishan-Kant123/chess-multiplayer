@@ -7,8 +7,8 @@ import { Chess } from "chess.js";
 import "./Room.css";
 import toast from "react-hot-toast";
 
-const SOCKET_SERVER_URL = "http://localhost:4000";
-// const SOCKET_SERVER_URL = "https://chess-multiplayer-rhci.onrender.com";
+// const SOCKET_SERVER_URL = "http://localhost:4000";
+const SOCKET_SERVER_URL = "https://chess-multiplayer-rhci.onrender.com";
 
 const Room = () => {
   const { roomId } = useParams();
