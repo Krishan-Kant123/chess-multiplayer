@@ -25,19 +25,21 @@ io.on("connection", (socket) => {
         white: null,
         black: null,
         turn: "white",
-        fen: "start", 
+        fen: "start",
       };
     }
 
     const room = rooms[roomId];
-
-    // Handle reconnect: remove stale assignment
-    if (room.white && room.white.id === socket.id) room.white = null;
-    if (room.black && room.black.id === socket.id) room.black = null;
-
     let assignedRole = "viewer";
 
-    if (!room.white) {
+    // ✅ Reassociate role if same username reconnects
+    if (room.white?.username === username) {
+      room.white.id = socket.id;
+      assignedRole = "white";
+    } else if (room.black?.username === username) {
+      room.black.id = socket.id;
+      assignedRole = "black";
+    } else if (!room.white) {
       room.white = { id: socket.id, username };
       assignedRole = "white";
     } else if (!room.black) {
@@ -47,7 +49,8 @@ io.on("connection", (socket) => {
 
     socket.emit("roleAssigned", assignedRole);
     socket.emit("turnUpdate", room.turn);
-    socket.emit("fenUpdate", room.fen); 
+    socket.emit("fenUpdate", room.fen);
+
     const playersData = {
       white: room.white ? room.white.username : null,
       black: room.black ? room.black.username : null,
@@ -75,7 +78,6 @@ io.on("connection", (socket) => {
       return;
     }
 
- 
     if (fen) {
       room.fen = fen;
     }
