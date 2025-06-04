@@ -4,10 +4,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import Chat from "./Chat";
 import { Chess } from "chess.js";
-import "./Room.css"
-import toast from 'react-hot-toast';
+import "./Room.css";
+import toast from "react-hot-toast";
 
 const SOCKET_SERVER_URL = "http://localhost:4000";
+// const SOCKET_SERVER_URL = "https://chess-multiplayer-rhci.onrender.com";
 
 const Room = () => {
   const { roomId } = useParams();
@@ -18,27 +19,26 @@ const Room = () => {
   const [fen, setFen] = useState("start");
   const [highlightSquares, setHighlightSquares] = useState({});
   const [boardWidth, setBoardWidth] = useState(400);
+  const [selectedSquare, setSelectedSquare] = useState(null);
+  const [players, setPlayers] = useState({ white: null, black: null });
+  const [gameStarted, setGameStarted] = useState(false);
   const socketRef = useRef(null);
   const chessRef = useRef(new Chess());
   const containerRef = useRef(null);
 
- 
   useEffect(() => {
     const calculateBoardWidth = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const padding = 32; 
+        const padding = 32;
         const maxWidth = Math.min(containerWidth - padding, 400);
-        setBoardWidth(Math.max(maxWidth, 280)); 
+        setBoardWidth(Math.max(maxWidth, 280));
       }
     };
 
     calculateBoardWidth();
-    window.addEventListener('resize', calculateBoardWidth);
-    
-    return () => {
-      window.removeEventListener('resize', calculateBoardWidth);
-    };
+    window.addEventListener("resize", calculateBoardWidth);
+    return () => window.removeEventListener("resize", calculateBoardWidth);
   }, []);
 
   useEffect(() => {
@@ -56,6 +56,13 @@ const Room = () => {
 
     socketRef.current.on("turnUpdate", (newTurn) => {
       setTurn(newTurn);
+    });
+
+    socketRef.current.on("fenUpdate", (savedFen) => {
+      if (savedFen && savedFen !== "start") {
+        chessRef.current.load(savedFen);
+        setFen(savedFen);
+      }
     });
 
     socketRef.current.on("chessMove", ({ move, by }) => {
@@ -77,6 +84,14 @@ const Room = () => {
       toast.error(msg);
     });
 
+    socketRef.current.on("playersUpdate", (data) => {
+      setPlayers(data);
+    });
+
+    socketRef.current.on("gameStarted", (status) => {
+      setGameStarted(status);
+    });
+
     return () => {
       socketRef.current.disconnect();
     };
@@ -92,35 +107,70 @@ const Room = () => {
     }
   };
 
-  const onPieceDrop = (sourceSquare, targetSquare) => {
+  const onDrop = (sourceSquare, targetSquare) => {
+    if (!gameStarted) {
+      toast.error("Opponent hasn't joined yet.");
+      return false;
+    }
     if (role !== turn) {
       toast.error("It's not your turn");
       return false;
     }
-
     const move = {
       from: sourceSquare,
       to: targetSquare,
       promotion: "q",
     };
-
     try {
       const result = chessRef.current.move(move);
-
       if (result) {
-        setFen(chessRef.current.fen());
+        const newFen = chessRef.current.fen();
+        setFen(newFen);
         setTurn(chessRef.current.turn() === "w" ? "white" : "black");
-        socketRef.current.emit("chessMove", { roomId, move, by: role });
+        socketRef.current.emit("chessMove", { roomId, move, by: role, fen: newFen });
         checkGameStatus();
         return true;
-      } else {
-        toast.error("Invalid move");
-        return false;
       }
-    } catch (error) {
-      console.error("Move error:", error);
+    } catch {
       toast.error("Invalid move");
-      return false;
+    }
+    return false;
+  };
+
+  const onSquareClick = (square) => {
+    if (!gameStarted) {
+      toast.error("Opponent hasn't joined yet.");
+      return;
+    }
+    if (role !== turn) {
+      toast.error("It's not your turn");
+      return;
+    }
+    if (!selectedSquare) {
+      setSelectedSquare(square);
+      onMouseOverSquare(square);
+    } else {
+      const move = {
+        from: selectedSquare,
+        to: square,
+        promotion: "q",
+      };
+      try {
+        const result = chessRef.current.move(move);
+        if (result) {
+          const newFen = chessRef.current.fen();
+          setFen(newFen);
+          setTurn(chessRef.current.turn() === "w" ? "white" : "black");
+          socketRef.current.emit("chessMove", { roomId, move, by: role, fen: newFen });
+          checkGameStatus();
+        } else {
+          toast.error("Invalid move");
+        }
+      } catch {
+        toast.error("Invalid move");
+      }
+      setSelectedSquare(null);
+      setHighlightSquares({});
     }
   };
 
@@ -130,18 +180,17 @@ const Room = () => {
       setHighlightSquares({});
       return;
     }
-
     const highlights = {};
     moves.forEach((m) => {
       highlights[m.to] = {
         background:
-          chessRef.current.get(m.to) !== null
-            ? "rgba(255, 0, 0, 0.4)"
-            : "rgba(0, 255, 0, 0.3)",
+       "radial-gradient(circle,rgba(252, 0, 0, 1) 14%, rgba(238, 174, 202, 0) 11%, rgba(245, 0, 0, 0.19) 36%, rgba(250, 10, 10, 1) 58%, rgba(148, 187, 233, 0) 37%, rgba(255, 0, 0, 1) 42%, rgba(148, 187, 233, 0) 0%)"
+        ,
       };
     });
-    highlights[square] = { background: "rgba(0, 0, 255, 0.3)" };
-
+    highlights[square] = {
+      background: "#fa0202",
+    };
     setHighlightSquares(highlights);
   };
 
@@ -161,18 +210,25 @@ const Room = () => {
             <p>
               Turn: <span className="bold-text">{turn}</span>
             </p>
+            <p>
+              White: <span className="bold-text">{players.white || "Waiting..."}</span>
+            </p>
+            <p>
+              Black: <span className="bold-text">{players.black || "Waiting..."}</span>
+            </p>
           </div>
           <div className="chessboard-container">
             <Chessboard
               position={fen === "start" ? undefined : fen}
               boardWidth={boardWidth}
-              onPieceDrop={onPieceDrop}
+              onSquareClick={onSquareClick}
               onMouseOverSquare={onMouseOverSquare}
               onMouseOutSquare={onMouseOutSquare}
+              onPieceDrop={onDrop}
               customSquareStyles={highlightSquares}
               boardOrientation={role === "white" ? "white" : "black"}
               transitionDuration={300}
-              draggable={role === turn}
+              draggable={true}
             />
           </div>
         </div>
@@ -183,5 +239,3 @@ const Room = () => {
 };
 
 export default Room;
-
-

@@ -1,4 +1,3 @@
-
 const { Server } = require("socket.io");
 const http = require("http");
 const express = require("express");
@@ -26,12 +25,13 @@ io.on("connection", (socket) => {
         white: null,
         black: null,
         turn: "white",
+        fen: "start", 
       };
     }
 
     const room = rooms[roomId];
 
-    // Remove this socket from any previous role (handles reconnects)
+    // Handle reconnect: remove stale assignment
     if (room.white && room.white.id === socket.id) room.white = null;
     if (room.black && room.black.id === socket.id) room.black = null;
 
@@ -47,19 +47,20 @@ io.on("connection", (socket) => {
 
     socket.emit("roleAssigned", assignedRole);
     socket.emit("turnUpdate", room.turn);
-
+    socket.emit("fenUpdate", room.fen); 
     const playersData = {
       white: room.white ? room.white.username : null,
       black: room.black ? room.black.username : null,
     };
-console.log(playersData)
+
+    console.log(`Room ${roomId} players:`, playersData);
     io.to(roomId).emit("playersUpdate", playersData);
 
     const gameStarted = !!(room.white && room.black);
     io.to(roomId).emit("gameStarted", gameStarted);
   });
 
-  socket.on("chessMove", ({ roomId, move }) => {
+  socket.on("chessMove", ({ roomId, move, by, fen }) => {
     const room = rooms[roomId];
     if (!room) return;
 
@@ -74,7 +75,12 @@ console.log(playersData)
       return;
     }
 
-    io.to(roomId).emit("chessMove", { move, by: role });
+ 
+    if (fen) {
+      room.fen = fen;
+    }
+
+    io.to(roomId).emit("chessMove", { move, by });
     room.turn = room.turn === "white" ? "black" : "white";
     io.to(roomId).emit("turnUpdate", room.turn);
   });
