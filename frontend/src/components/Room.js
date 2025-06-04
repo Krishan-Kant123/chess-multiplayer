@@ -1,3 +1,4 @@
+
 import { Chessboard } from "react-chessboard";
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -50,8 +51,22 @@ const Room = () => {
     socketRef.current = io(SOCKET_SERVER_URL);
     socketRef.current.emit("joinRoom", { roomId, username });
 
+    const rejoin = () => {
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit("joinRoom", { roomId, username });
+      }
+    };
+
+    socketRef.current.on("connect", rejoin);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        rejoin();
+      }
+    });
+
     socketRef.current.on("roleAssigned", (assignedRole) => {
       setRole(assignedRole);
+      toast.success(`You're playing as ${assignedRole}`);
     });
 
     socketRef.current.on("turnUpdate", (newTurn) => {
@@ -93,13 +108,15 @@ const Room = () => {
     });
 
     return () => {
+      document.removeEventListener("visibilitychange", rejoin);
       socketRef.current.disconnect();
     };
   }, [roomId, navigate]);
 
   const checkGameStatus = () => {
     if (chessRef.current.isCheckmate()) {
-      toast.success(`Checkmate! ${turn === "white" ? "Black" : "White"} wins.`);
+      const winner = chessRef.current.turn() === "w" ? "black" : "white";
+      toast.success(`Checkmate! ${winner.charAt(0).toUpperCase() + winner.slice(1)} wins.`);
     } else if (chessRef.current.isStalemate()) {
       toast("Stalemate!", { icon: "🤝" });
     } else if (chessRef.current.isCheck()) {
@@ -112,10 +129,15 @@ const Room = () => {
       toast.error("Opponent hasn't joined yet.");
       return false;
     }
+    if (role === "viewer") {
+      toast.error("You're a viewer. You can't move.");
+      return false;
+    }
     if (role !== turn) {
       toast.error("It's not your turn");
       return false;
     }
+
     const move = {
       from: sourceSquare,
       to: targetSquare,
@@ -140,6 +162,10 @@ const Room = () => {
   const onSquareClick = (square) => {
     if (!gameStarted) {
       toast.error("Opponent hasn't joined yet.");
+      return;
+    }
+    if (role === "viewer") {
+      toast.error("You're a viewer. You can't move.");
       return;
     }
     if (role !== turn) {
@@ -184,8 +210,7 @@ const Room = () => {
     moves.forEach((m) => {
       highlights[m.to] = {
         background:
-       "radial-gradient(circle,rgba(252, 0, 0, 1) 14%, rgba(238, 174, 202, 0) 11%, rgba(245, 0, 0, 0.19) 36%, rgba(250, 10, 10, 1) 58%, rgba(148, 187, 233, 0) 37%, rgba(255, 0, 0, 1) 42%, rgba(148, 187, 233, 0) 0%)"
-        ,
+          "radial-gradient(circle,rgba(252, 0, 0, 1) 14%, rgba(238, 174, 202, 0) 11%, rgba(245, 0, 0, 0.19) 36%, rgba(250, 10, 10, 1) 58%, rgba(148, 187, 233, 0) 37%, rgba(255, 0, 0, 1) 42%, rgba(148, 187, 233, 0) 0%)",
       };
     });
     highlights[square] = {
